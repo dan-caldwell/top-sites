@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import clone from 'clone';
 
 const searchUrl = `https://top-sites-list.s3.amazonaws.com/`;
 

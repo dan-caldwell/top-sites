@@ -12,12 +12,10 @@ provider:
 plugins:
   - serverless-offline
 functions:
-  topSites:
-    handler: handler.topSites
+  fetchTopSites:
+    handler: handler.fetchTopSites
     events:
-      - http:
-          path: top-sites
-          method: GET
+      - schedule: rate(1 day)
     # events:
     #   - schedule: rate(1 day)
 #    The following are a few example events you can configure

@@ -1,28 +1,99 @@
 const csv = require('csvtojson');
 const fs = require('fs-extra');
-const path = require('path');
+const AWS = require('aws-sdk');
+const axios = require('axios');
+const unzipper = require('unzipper');
+const { Readable } = require('stream');
 
-module.exports.topSites = async event => {
+const s3 = new AWS.S3({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+});
 
-    const data = await csv({
-        noheader: true,
-        headers: ['rank', 'url']
-    }).fromFile('./top-1m.csv');
+const bucket = 'top-sites-list';
 
-    const topLevelAcceptable = ['co', 'com'];
-    const onlyDomains = data.map(({ url }) => {
-        const split = url.split('.');
-        const slice = topLevelAcceptable.includes(split[split.length - 2]) ? -3 : -2;
-        return split.slice(slice).join('.');
-    });
-    const noDuplicates = [...new Set(onlyDomains)];
-    
-    const output = JSON.stringify(noDuplicates, null, 4);
+const chunkArray = (inputArray, perChunk) => {
+    return inputArray.reduce((resultArray, item, index) => {
+        const chunkIndex = Math.floor(index / perChunk)
 
-    fs.writeFileSync('./output.json', output);
+        if (!resultArray[chunkIndex]) {
+            resultArray[chunkIndex] = [] // start a new chunk
+        }
 
-    return {
-        statusCode: 200,
-        body: 'hello'
+        resultArray[chunkIndex].push(item)
+
+        return resultArray
+    }, []);
+}
+
+module.exports.fetchTopSites = async event => {
+
+    try {
+
+        const { data } = await axios.get('http://s3-us-west-1.amazonaws.com/umbrella-static/top-1m.csv.zip', {
+            responseType: 'arraybuffer'
+        });
+
+        const stream = Readable.from(data);
+
+        // Unzip
+        const csvStream = stream
+            .on("error", e => console.error('Could not extract file', e))
+            .pipe(
+                unzipper.ParseOne('top-1m.csv', {
+                    forceStream: true
+                })
+            );
+
+        const csvData = await csv({
+            noheader: true,
+            headers: ['rank', 'url']
+        }).fromStream(csvStream);
+
+        const list = csvData.map(({ url }, index) => ({
+            url,
+            rank: index + 1
+        }));
+
+        const alphabetRaw = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        const alphabet = alphabetRaw.split('');
+
+        // Split domains by letter
+        for (const character of alphabet) {
+            const filtered = list.filter(item => item.url.startsWith(character));
+
+            // Save the first two letters to a JSON file
+            for (const secondChar of alphabet) {
+                const filteredSecond = filtered.filter(item => item.url.charAt(1) === secondChar);
+                if (!filteredSecond.length) continue;
+                const key = `characters/${character}${secondChar}.json`;
+                const output = JSON.stringify(filteredSecond);
+                await s3.putObject({
+                    Bucket: bucket,
+                    Key: key,
+                    Body: output,
+                    ContentType: 'application/json',
+                }).promise();
+                console.log(`Put object: ${key}`);
+            }
+        }
+
+        // Split domains by rank
+        const chunks = chunkArray(list, 1000);
+        for (const [index, chunk] of chunks.entries()) {
+            const key = `pages/${index + 1}.json`;
+            const output = JSON.stringify(chunk);
+            // Save the JSON
+            await s3.putObject({
+                Bucket: bucket,
+                Key: key,
+                Body: output,
+                ContentType: 'application/json',
+            }).promise();
+
+            console.log(`Put object: ${key}`);
+        }
+    } catch (err) {
+        console.error(err);
     }
 }

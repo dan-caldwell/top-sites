@@ -2,8 +2,10 @@
 
 # dependencies
 /node_modules
+*/node_modules
 /.pnp
 .pnp.js
+.serverless
 
 # testing
 /coverage
@@ -29,6 +31,9 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+secrets-prod.json
+secrets-dev.json
+.env
 
 # vercel
 .vercel

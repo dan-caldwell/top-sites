@@ -1,13 +1,11 @@
 const csv = require('csvtojson');
-const fs = require('fs-extra');
 const AWS = require('aws-sdk');
 const axios = require('axios');
 const unzipper = require('unzipper');
 const { Readable } = require('stream');
 
 const s3 = new AWS.S3({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    region: 'us-east-1'
 });
 
 const bucket = 'top-sites-list';
@@ -30,6 +28,13 @@ module.exports.fetchTopSites = async event => {
 
     try {
 
+        await s3.putObject({
+            Bucket: bucket,
+            Key: 'test.json',
+            Body: '{"hello": "world"}',
+            ContentType: 'application/json',
+        }).promise();
+
         const { data } = await axios.get('http://s3-us-west-1.amazonaws.com/umbrella-static/top-1m.csv.zip', {
             responseType: 'arraybuffer'
         });
@@ -50,17 +55,12 @@ module.exports.fetchTopSites = async event => {
             headers: ['rank', 'url']
         }).fromStream(csvStream);
 
-        const list = csvData.map(({ url }, index) => ({
-            url,
-            rank: index + 1
-        }));
-
         const alphabetRaw = 'abcdefghijklmnopqrstuvwxyz0123456789';
         const alphabet = alphabetRaw.split('');
 
         // Split domains by letter
         for (const character of alphabet) {
-            const filtered = list.filter(item => item.url.startsWith(character));
+            const filtered = csvData.filter(item => item.url.startsWith(character));
 
             // Save the first two letters to a JSON file
             for (const secondChar of alphabet) {
@@ -79,7 +79,7 @@ module.exports.fetchTopSites = async event => {
         }
 
         // Split domains by rank
-        const chunks = chunkArray(list, 1000);
+        const chunks = chunkArray(csvData, 1000);
         for (const [index, chunk] of chunks.entries()) {
             const key = `pages/${index + 1}.json`;
             const output = JSON.stringify(chunk);

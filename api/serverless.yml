@@ -8,7 +8,19 @@ provider:
   name: aws
   runtime: nodejs14.x
   lambdaHashingVersion: 20201221
-  timeout: 60
+  timeout: 900
+  memorySize: 2048
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "s3:GetObject"
+        - "s3:PutObject"
+        - "s3:DeleteObject"
+        - "s3:PutObjectAcl"
+        - "s3:ListBucket"
+      Resource:
+        - "arn:aws:s3:::top-sites-list"
+        - "arn:aws:s3:::top-sites-list/*"
 plugins:
   - serverless-offline
 functions:

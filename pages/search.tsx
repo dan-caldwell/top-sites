@@ -9,7 +9,6 @@ type Rank = {
 
 const Search = () => {
     const [searchString, setSearchString] = useState('');
-    const [usesRankings, setUsesRankings] = useState(true);
     const [singleLetterSearchPage, setSingleLetterSearchPage] = useState({
         letters: '',
         results: []
@@ -82,7 +81,7 @@ const Search = () => {
             <button className="border border-black" onClick={handleClearSearch}>Clear</button>
             <div>
                 {searchResults.map(result => (
-                    <div key={result.url}>{result.url} - {result.rank}</div>
+                    <div key={result.url}>{result.rank} - {result.url}</div>
                 ))}
             </div>
         </div>

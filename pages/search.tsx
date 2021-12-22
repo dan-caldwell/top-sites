@@ -90,7 +90,7 @@ const Search = () => {
             <button className="border border-black" onClick={handleClearSearch}>Clear</button>
             <button className="border border-black" onClick={handleFilterOnlyDomains}>Only Domains</button>
             <div>
-                {searchResults.map(({ rank, url }) => <RankItem rank={rank} url={url} />)}
+                {searchResults.map(({ rank, url }) => <RankItem key={url} rank={rank} url={url} />)}
             </div>
         </div>
     )

@@ -1,11 +1,8 @@
 import { useState } from 'react';
+import clone from 'clone';
+import RankItem, { Rank } from '../components/RankItem';
 
 const searchUrl = `https://top-sites-list.s3.amazonaws.com/`;
-
-type Rank = {
-  url: string,
-  rank: number
-}
 
 const Search = () => {
     const [searchString, setSearchString] = useState('');
@@ -74,15 +71,26 @@ const Search = () => {
         handleListRankings();
     }
 
+    const handleFilterOnlyDomains = () => {
+        setSearchResults(oldResults => {
+            const newResults = clone(oldResults);
+            return newResults.filter((item: Rank) => {
+                const matches = item.url.match(/\./g);
+                if (!matches) return false;
+                if (matches.length === 1) return true;
+                return false;
+            })
+        })
+    }
+
     return (
         <div>
             <input className="border border-black" type="text" value={searchString} onChange={handleSearchChange} />
             <button className="border border-black" onClick={handleSearchClick}>Search</button>
             <button className="border border-black" onClick={handleClearSearch}>Clear</button>
+            <button className="border border-black" onClick={handleFilterOnlyDomains}>Only Domains</button>
             <div>
-                {searchResults.map(result => (
-                    <div key={result.url}>{result.rank} - {result.url}</div>
-                ))}
+                {searchResults.map(({ rank, url }) => <RankItem rank={rank} url={url} />)}
             </div>
         </div>
     )

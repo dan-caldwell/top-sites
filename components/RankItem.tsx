@@ -12,7 +12,12 @@ const RankItem: React.FC<Rank> = ({
     rank
 }) => {
     return (
-        <div key={url}>{numberWithCommas(rank)} - <a className="text-blue-600" href={`https://${url}`} target="_blank" rel="noopener noreferrer">{url}</a></div>
+        <tr key={url} className="border-b leading-8 overflow-x-scroll">
+            <td className="text-right border-r px-2">{numberWithCommas(rank)}</td>
+            <td className="whitespace-nowrap lg:overflow-x-scroll overflow-x-hidden">
+                <a className="text-blue-600 p-2" href={`https://${url}`} target="_blank" rel="noopener noreferrer">{url}</a>
+            </td>
+        </tr>
     )
 }
 

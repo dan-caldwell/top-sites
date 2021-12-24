@@ -18,3 +18,27 @@ a {
 * {
   box-sizing: border-box;
 }
+
+@layer utilities {
+
+  .w-144 {
+    width: 100%;
+  }
+
+  .max-w-136 {
+    max-width: 34rem;
+  }
+
+  .w-192 {
+    width: 48rem;
+  }
+
+}
+
+@screen lg {
+
+  .w-144 {
+    width: 36rem;
+  }
+
+}

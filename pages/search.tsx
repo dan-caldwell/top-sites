@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import clone from 'clone';
 import RankItem, { Rank } from '../components/RankItem';
+import Button from '../components/Button';
 
 const searchUrl = `https://top-sites-list.s3.amazonaws.com/`;
 
@@ -26,7 +27,7 @@ const Search = () => {
         const target = e.target as HTMLInputElement;
         setSearchString(target.value);
     }
-    
+
     const handleListRankings = async () => {
         const res = await fetch(`${searchUrl}pages/1.json`);
         const parsed = await res.json();
@@ -60,10 +61,7 @@ const Search = () => {
         }
         if (singleLetterSearchPage.results.length && singleLetterSearchPage.letters === searchString[0]) parsedResults = singleLetterSearchPage.results;
         if (twoLetterSearchPage.results.length && twoLetterSearchPage.letters === searchString.slice(0, 2)) parsedResults = twoLetterSearchPage.results;
-        console.log(parsedResults[0], searchString);
-        setSearchResults(oldResults => {
-            return parsedResults.filter((item: Rank) => item.url.includes(searchString))
-        });
+        setSearchResults(parsedResults.filter((item: Rank) => item.url.includes(searchString)));
     }
 
     const handleClearSearch = () => {
@@ -83,15 +81,29 @@ const Search = () => {
         })
     }
 
+    useEffect(() => {
+        handleListRankings();
+    }, []);
+
     return (
-        <div>
-            <input className="border border-black" type="text" value={searchString} onChange={handleSearchChange} />
-            <button className="border border-black" onClick={handleSearchClick}>Search</button>
-            <button className="border border-black" onClick={handleClearSearch}>Clear</button>
-            <button className="border border-black" onClick={handleFilterOnlyDomains}>Only Domains</button>
-            <div>
-                {searchResults.map(({ rank, url }) => <RankItem key={url} rank={rank} url={url} />)}
+        <div className="Search bg-white p-4 w-144">
+            <input className="border border-gray-300 p-1 rounded-lg shadow-sm" type="text" value={searchString} onChange={handleSearchChange} />
+            <Button title="Search" onClick={handleSearchClick} className="ml-2" />
+            <Button title="Clear" onClick={handleClearSearch} className="ml-2" />
+            <Button title="Only Domains" onClick={handleFilterOnlyDomains} className="ml-2" />
+            <div className="flex border mt-4">
+                <div className="flex flex-col border-r">
+                    {searchResults.map(({ rank }) => (
+                        <div key={rank} className="p-2 border-b">{rank}</div>
+                    ))}
+                </div>
+                <div className="flex flex-col flex-grow overflow-hidden">
+                    {searchResults.map(({ url }) => (
+                        <a key={url} className="text-blue-600 p-2 border-b overflow-x-scroll whitespace-nowrap" href={`https://${url}`} target="_blank" rel="noopener noreferrer">{url}</a>
+                    ))}
+                </div>
             </div>
+
         </div>
     )
 }
